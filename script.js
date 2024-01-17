@@ -1,73 +1,42 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const accessKey = 'hqWu4qTd9DMEABwseOhbI64hRRFeokfdtDecm_ONjLs'; // Замените на свой API-ключ
 
-function addReview() {
-    const productName = document.getElementById('productName').value;
-    const reviewText = document.getElementById('reviewText').value;
+    const photoElement = document.getElementById('photo');
+    const photographerElement = document.getElementById('photographer');
+    const likeCounterElement = document.getElementById('likesCount');
+    const likeButton = document.getElementById('likeButton');
 
-    if (!productName || !reviewText) {
-        alert('Заполните все поля для добавления отзыва.');
-        return;
+    let likesCount = localStorage.getItem('likesCount') || 0;
+
+    async function fetchRandomPhoto() {
+        try {
+            const response = await fetch(`https://api.unsplash.com/photos/random?client_id=${accessKey}`);
+            const data = await response.json();
+
+            if (data && data.urls && data.user) {
+                const photoUrl = data.urls.regular;
+                const photographerName = data.user.name;
+
+                photoElement.src = photoUrl;
+                photographerElement.textContent = `Photographer: ${photographerName}`;
+            }
+        } catch (error) {
+            console.error('Error fetching photo:', error);
+        }
     }
 
-    const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
-    const newReview = { product: productName, review: reviewText };
-    reviews.push(newReview);
-    localStorage.setItem('reviews', JSON.stringify(reviews));
+    function likePhoto() {
+        try {
+            likesCount++;
+            likeCounterElement.textContent = likesCount;
+            localStorage.setItem('likesCount', likesCount);
+        } catch (error) {
+            console.error('Error liking photo:', error);
+        }
+    }
 
-    document.getElementById('productName').value = '';
-    document.getElementById('reviewText').value = '';
+    fetchRandomPhoto();
 
-    alert('Отзыв успешно добавлен.');
-}
-
-function showReviews() {
-    const productList = document.getElementById('productList');
-    const reviewList = document.getElementById('reviewList');
-    const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
-
-    // Очищаем списки
-    productList.innerHTML = '';
-    reviewList.innerHTML = '';
-
-    // Заполняем список продуктов
-    const uniqueProducts = [...new Set(reviews.map(review => review.product))];
-    uniqueProducts.forEach(product => {
-        const listItem = document.createElement('li');
-        listItem.textContent = product;
-        listItem.onclick = () => showProductReviews(product);
-        productList.appendChild(listItem);
-    });
-}
-
-function showProductReviews(product) {
-    const reviewList = document.getElementById('reviewList');
-    const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
-    const productReviews = reviews.filter(review => review.product === product);
-
-    // Очищаем список отзывов
-    reviewList.innerHTML = '';
-
-    // Заполняем список отзывов по выбранному продукту
-    productReviews.forEach(review => {
-        const listItem = document.createElement('li');
-        listItem.textContent = review.review;
-
-        const deleteBtn = document.createElement('span');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Удалить';
-        deleteBtn.onclick = () => deleteReview(product, review.review);
-
-        listItem.appendChild(deleteBtn);
-        reviewList.appendChild(listItem);
-    });
-}
-
-function deleteReview(product, reviewText) {
-    const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
-    const updatedReviews = reviews.filter(review => !(review.product === product && review.review === reviewText));
-    localStorage.setItem('reviews', JSON.stringify(updatedReviews));
-
-    showReviews(); // Обновляем список после удаления
-}
-
-// Инициализация при загрузке страницы
-showReviews();
+    // Привязываем событие к кнопке лайка
+    likeButton.addEventListener('click', likePhoto);
+});
